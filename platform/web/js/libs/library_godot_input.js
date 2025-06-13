@@ -127,7 +127,7 @@ const GodotIME = {
 			const ime = document.createElement('div');
 			ime.className = 'ime';
 			ime.style.background = 'none';
-			ime.style.opacity = 0.0;
+			ime.style.opacity = '0.0';
 			ime.style.position = 'fixed';
 			ime.style.textAlign = 'left';
 			ime.style.fontSize = '1px';
@@ -525,7 +525,8 @@ const GodotInput = {
 	godot_js_input_mouse_wheel_cb: function (callback) {
 		const func = GodotRuntime.get_func(callback);
 		function wheel_cb(evt) {
-			if (func(evt['deltaX'] || 0, evt['deltaY'] || 0)) {
+			const modifiers = GodotInput.getModifiers(evt);
+			if (func(evt['deltaX'] || 0, evt['deltaY'] || 0, modifiers)) {
 				evt.preventDefault();
 			}
 		}

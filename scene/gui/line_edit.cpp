@@ -34,6 +34,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/alt_codes.h"
+#include "core/string/print_string.h"
 #include "core/string/translation_server.h"
 #include "scene/gui/label.h"
 #include "scene/main/window.h"
@@ -75,7 +76,7 @@ void LineEdit::_edit(bool p_show_virtual_keyboard) {
 	editing = true;
 	_validate_caret_can_draw();
 
-	if (p_show_virtual_keyboard) {
+	if (p_show_virtual_keyboard && !pending_select_all_on_focus) {
 		show_virtual_keyboard();
 	}
 	queue_redraw();
@@ -128,12 +129,20 @@ void LineEdit::_update_ime_window_position() {
 		return;
 	}
 	DisplayServer::get_singleton()->window_set_ime_active(true, wid);
-	Point2 pos = Point2(get_caret_pixel_pos().x, (get_size().y + theme_cache.font->get_height(theme_cache.font_size)) / 2) + get_global_position();
-	if (get_window()->get_embedder()) {
+	Point2 pos = Point2(get_caret_pixel_pos().x, (get_size().y + theme_cache.font->get_height(theme_cache.font_size)) / 2);
+	
+	// Transform position through the complete viewport chain (handles SubViewports properly)
+	pos = get_viewport_transform().xform(pos + get_global_position());
+	
+	Window *window = get_window();
+	if (window->get_embedder()) {
 		pos += get_viewport()->get_popup_base_transform().get_origin();
 	}
 	// Take into account the window's transform.
 	pos = get_window()->get_screen_transform().xform(pos);
+	
+	// Take into account the window's screen transform.
+	pos = window->get_screen_transform().xform(pos);
 	// The window will move to the updated position the next time the IME is updated, not immediately.
 	DisplayServer::get_singleton()->window_set_ime_position(pos, wid);
 }
@@ -553,7 +562,7 @@ void LineEdit::gui_input(const Ref<InputEvent> &p_event) {
 				}
 			}
 
-			if ((!selection.creating) && (!selection.double_click)) {
+			if (!selection.creating && !selection.double_click) {
 				deselect();
 			}
 			selection.creating = false;
@@ -2001,7 +2010,7 @@ void LineEdit::delete_text(int p_from_column, int p_to_column) {
 	}
 }
 
-void LineEdit::set_text(String p_text) {
+void LineEdit::set_text(const String &p_text) {
 	clear_internal();
 	insert_text_at_caret(p_text);
 	_create_undo_state();
@@ -2145,7 +2154,7 @@ String LineEdit::get_placeholder() const {
 }
 
 void LineEdit::set_caret_column(int p_column) {
-	if (p_column > (int)text.length()) {
+	if (p_column > text.length()) {
 		p_column = text.length();
 	}
 
@@ -2346,7 +2355,7 @@ bool LineEdit::has_selection() const {
 	return selection.enabled;
 }
 
-String LineEdit::get_selected_text() {
+String LineEdit::get_selected_text() const {
 	if (selection.enabled) {
 		return text.substr(selection.begin, selection.end - selection.begin);
 	} else {

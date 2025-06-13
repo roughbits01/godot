@@ -347,10 +347,13 @@ static const _BuiltinActionDisplayName _builtin_action_display_names[] = {
 	{ "ui_cut",                                        TTRC("Cut") },
 	{ "ui_copy",                                       TTRC("Copy") },
 	{ "ui_paste",                                      TTRC("Paste") },
+	{ "ui_menu",                                       TTRC("Open Context Menu") },
 	{ "ui_focus_mode",                                 TTRC("Toggle Tab Focus Mode") },
 	{ "ui_undo",                                       TTRC("Undo") },
 	{ "ui_redo",                                       TTRC("Redo") },
 	{ "ui_text_completion_query",                      TTRC("Completion Query") },
+	{ "ui_text_completion_accept",                     TTRC("Accept Completion Hint") },
+	{ "ui_text_completion_replace",                    TTRC("Accept Completion Hint and Replace") },
 	{ "ui_text_newline",                               TTRC("New Line") },
 	{ "ui_text_newline_blank",                         TTRC("New Blank Line") },
 	{ "ui_text_newline_above",                         TTRC("New Line Above") },
@@ -406,9 +409,9 @@ static const _BuiltinActionDisplayName _builtin_action_display_names[] = {
 	{ "ui_filedialog_up_one_level",                    TTRC("Go Up One Level") },
 	{ "ui_filedialog_refresh",                         TTRC("Refresh") },
 	{ "ui_filedialog_show_hidden",                     TTRC("Show Hidden") },
-	{ "ui_swap_input_direction ",                      TTRC("Swap Input Direction") },
+	{ "ui_swap_input_direction",                       TTRC("Swap Input Direction") },
 	{ "ui_unicode_start",                              TTRC("Start Unicode Character Input") },
-	{ "ui_colorpicker_delete_preset",                  TTRC("Toggle License Notices") },
+	{ "ui_colorpicker_delete_preset",                  TTRC("Delete Color Preset") },
 	{ "ui_accessibility_drag_and_drop",                TTRC("Accessibility: Keyboard Drag and Drop") },
 	{ "",                                              ""}
 	/* clang-format on */
@@ -423,6 +426,7 @@ String InputMap::get_builtin_display_name(const String &p_name) const {
 		}
 	}
 
+	print_line("missing: " + p_name);
 	return p_name;
 }
 
@@ -865,6 +869,7 @@ const HashMap<String, List<Ref<InputEvent>>> &InputMap::get_builtins_with_featur
 		}
 
 		if (!override_for.is_empty() && !OS::get_singleton()->has_feature(override_for)) {
+			print_line("OS does not support this override - skip. " + name + " " + override_for);
 			// OS does not support this override - skip.
 			continue;
 		}

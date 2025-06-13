@@ -48,6 +48,7 @@ class ActionMapEditor : public Control {
 public:
 	struct ActionInfo {
 		String name;
+		String display_name;
 		Dictionary action;
 		bool has_initial = false;
 		Dictionary action_initial;

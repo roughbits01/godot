@@ -825,9 +825,11 @@ else:
     elif env["optimize"] == "speed_trace":
         env["OPTIMIZELEVEL"] = "-O2"
     elif env["optimize"].startswith("size"):
-        env["OPTIMIZELEVEL"] = "-Os"
-        if env["optimize"] == "size_extra":
-            env.AppendUnique(CPPDEFINES=["SIZE_EXTRA"])
+        # env["OPTIMIZELEVEL"] = "-Os"
+        # if env["optimize"] == "size_extra":
+        env.AppendUnique(CPPDEFINES=["SIZE_EXTRA"])
+        env.Append(CCFLAGS=["-Oz"])
+        env.Append(LINKFLAGS=["-Oz"])
     elif env["optimize"] == "debug":
         env["OPTIMIZELEVEL"] = "-Og"
     elif env["optimize"] == "none":

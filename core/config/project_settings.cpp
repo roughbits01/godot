@@ -385,6 +385,16 @@ Variant ProjectSettings::get_setting_with_override(const StringName &p_name) con
 	_THREAD_SAFE_METHOD_
 
 	const LocalVector<Pair<StringName, StringName>> *overrides = feature_overrides.getptr(p_name);
+	// pretty print feature_overrides
+	// if (String(p_name) == "input/ui_graph_follow_left") {
+	// 	// pretty print feature_overrides
+	// 	for (const KeyValue<StringName, LocalVector<Pair<StringName, StringName>>> &E : feature_overrides) {
+	// 		print_line("feature_overrides: " + String(E.key));
+	// 		for (const Pair<StringName, StringName> &F : E.value) {
+	// 			print_line("  " + String(F.first) + " " + String(F.second));
+	// 		}
+	// 	}
+	// }
 	if (overrides) {
 		for (uint32_t i = 0; i < overrides->size(); i++) {
 			if (!OS::get_singleton()->has_feature((*overrides)[i].first)) {
@@ -394,6 +404,13 @@ Variant ProjectSettings::get_setting_with_override(const StringName &p_name) con
 			// Custom features are checked in OS.has_feature() already. No need to check twice.
 			const RBMap<StringName, VariantContainer>::Element *override_prop = props.find((*overrides)[i].second);
 			if (override_prop) {
+				if (String(p_name) == "input/ui_graph_follow_left") {
+					// pretty print props
+					for (const KeyValue<StringName, VariantContainer> &E : props) {
+						print_line("props: " + String(E.key) + " " + String(E.value.variant));
+					}
+					print_line("override_prop: " + String(override_prop->get().variant));
+				}
 				return override_prop->get().variant;
 			}
 		}

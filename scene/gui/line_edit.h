@@ -321,14 +321,14 @@ public:
 	void selection_delete();
 	void deselect();
 	bool has_selection() const;
-	String get_selected_text();
+	String get_selected_text() const;
 	int get_selection_from_column() const;
 	int get_selection_to_column() const;
 
 	void delete_char();
 	void delete_text(int p_from_column, int p_to_column);
 
-	void set_text(String p_text);
+	void set_text(const String& p_text);
 	String get_text() const;
 	void set_text_with_selection(const String &p_text); // Set text, while preserving selection.
 

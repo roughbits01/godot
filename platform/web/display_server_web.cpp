@@ -634,18 +634,18 @@ Point2i DisplayServerWeb::mouse_get_position() const {
 }
 
 // Wheel
-int DisplayServerWeb::mouse_wheel_callback(double p_delta_x, double p_delta_y) {
+int DisplayServerWeb::mouse_wheel_callback(double p_delta_x, double p_delta_y, int p_modifiers) {
 #ifdef PROXY_TO_PTHREAD_ENABLED
 	if (!Thread::is_main_thread()) {
-		callable_mp_static(DisplayServerWeb::_mouse_wheel_callback).call_deferred(p_delta_x, p_delta_y);
+		callable_mp_static(DisplayServerWeb::_mouse_wheel_callback).call_deferred(p_delta_x, p_delta_y, p_ctrl_key);
 		return true;
 	}
 #endif
 
-	return _mouse_wheel_callback(p_delta_x, p_delta_y);
+	return _mouse_wheel_callback(p_delta_x, p_delta_y, p_modifiers);
 }
 
-int DisplayServerWeb::_mouse_wheel_callback(double p_delta_x, double p_delta_y) {
+int DisplayServerWeb::_mouse_wheel_callback(double p_delta_x, double p_delta_y, int p_modifiers) {
 	if (!godot_js_display_canvas_is_focused() && !godot_js_is_ime_focused()) {
 		if (get_singleton()->cursor_inside_canvas) {
 			godot_js_display_canvas_focus();
@@ -655,43 +655,60 @@ int DisplayServerWeb::_mouse_wheel_callback(double p_delta_x, double p_delta_y) 
 	}
 
 	Input *input = Input::get_singleton();
-	Ref<InputEventMouseButton> ev;
-	ev.instantiate();
-	ev->set_position(input->get_mouse_position());
-	ev->set_global_position(ev->get_position());
-
-	ev->set_shift_pressed(input->is_key_pressed(Key::SHIFT));
-	ev->set_alt_pressed(input->is_key_pressed(Key::ALT));
-	ev->set_ctrl_pressed(input->is_key_pressed(Key::CTRL));
-	ev->set_meta_pressed(input->is_key_pressed(Key::META));
-
-	if (p_delta_y < 0) {
-		ev->set_button_index(MouseButton::WHEEL_UP);
-	} else if (p_delta_y > 0) {
-		ev->set_button_index(MouseButton::WHEEL_DOWN);
-	} else if (p_delta_x > 0) {
-		ev->set_button_index(MouseButton::WHEEL_LEFT);
-	} else if (p_delta_x < 0) {
-		ev->set_button_index(MouseButton::WHEEL_RIGHT);
-	} else {
-		return false;
+	if (p_modifiers & 4) {
+		Ref<InputEventMagnifyGesture> ev;
+		ev.instantiate();
+		ev->set_position(input->get_mouse_position());
+		dom2godot_mod(ev, p_modifiers, Key::NONE);
+		ev->set_factor(Math::exp(-p_delta_y / 100));
+		input->parse_input_event(ev);
+		return true;
 	}
 
-	// Different browsers give wildly different delta values, and we can't
-	// interpret deltaMode, so use default value for wheel events' factor.
+	Ref<InputEventPanGesture> evp;
+	evp.instantiate();
+	evp->set_position(input->get_mouse_position());
+	dom2godot_mod(evp, p_modifiers, Key::NONE);
+	evp->set_delta(Vector2{ static_cast<real_t>(p_delta_x / 120), static_cast<real_t>(p_delta_y / 120) });
+	input->parse_input_event(evp);
 
-	MouseButtonMask button_flag = mouse_button_to_mask(ev->get_button_index());
-	BitField<MouseButtonMask> button_mask = input->get_mouse_button_mask();
-	button_mask.set_flag(button_flag);
+	// Ref<InputEventMouseButton> ev;
+	// ev.instantiate();
+	// ev->set_position(input->get_mouse_position());
+	// ev->set_global_position(ev->get_position());
 
-	ev->set_pressed(true);
-	ev->set_button_mask(button_mask);
-	input->parse_input_event(ev);
+	// ev->set_shift_pressed(input->is_key_pressed(Key::SHIFT));
+	// ev->set_alt_pressed(input->is_key_pressed(Key::ALT));
+	// ev->set_ctrl_pressed(input->is_key_pressed(Key::CTRL));
+	// ev->set_meta_pressed(input->is_key_pressed(Key::META));
 
-	Ref<InputEventMouseButton> release = ev->duplicate();
-	release->set_pressed(false);
-	release->set_button_mask(input->get_mouse_button_mask());
-	input->parse_input_event(release);
+	// if (p_delta_y < 0) {
+	// 	ev->set_button_index(MouseButton::WHEEL_UP);
+	// } else if (p_delta_y > 0) {
+	// 	ev->set_button_index(MouseButton::WHEEL_DOWN);
+	// } else if (p_delta_x > 0) {
+	// 	ev->set_button_index(MouseButton::WHEEL_LEFT);
+	// } else if (p_delta_x < 0) {
+	// 	ev->set_button_index(MouseButton::WHEEL_RIGHT);
+	// } else {
+	// 	return false;
+	// }
+
+	// // Different browsers give wildly different delta values, and we can't
+	// // interpret deltaMode, so use default value for wheel events' factor.
+
+	// MouseButtonMask button_flag = mouse_button_to_mask(ev->get_button_index());
+	// BitField<MouseButtonMask> button_mask = input->get_mouse_button_mask();
+	// button_mask.set_flag(button_flag);
+
+	// ev->set_pressed(true);
+	// ev->set_button_mask(button_mask);
+	// input->parse_input_event(ev);
+
+	// Ref<InputEventMouseButton> release = ev->duplicate();
+	// release->set_pressed(false);
+	// release->set_button_mask(input->get_mouse_button_mask());
+	// input->parse_input_event(release);
 
 	return true;
 }
@@ -788,6 +805,36 @@ void DisplayServerWeb::_vk_input_text_callback(const String &p_text, int p_curso
 		k->set_keycode(Key::RIGHT);
 		input->parse_input_event(k);
 	}
+}
+
+void DisplayServerWeb::vk_submit_text_callback() {
+
+#ifdef PROXY_TO_PTHREAD_ENABLED
+	if (!Thread::is_main_thread()) {
+		callable_mp_static(DisplayServerWeb::_vk_submit_text_callback).call_deferred();
+		return;
+	}
+#endif
+
+	_vk_submit_text_callback();
+}
+
+void DisplayServerWeb::_vk_submit_text_callback() {
+	DisplayServerWeb *ds = DisplayServerWeb::get_singleton();
+	if (!ds || !ds->input_event_callback.is_valid()) {
+		return;
+	}
+	Ref<InputEventKey> k;
+	k.instantiate();
+	k->set_pressed(true);
+	k->set_echo(false);
+	k->set_keycode(Key::ENTER);
+	ds->input_event_callback.call(k);
+	k.instantiate();
+	k->set_pressed(false);
+	k->set_echo(false);
+	k->set_keycode(Key::ENTER);
+	ds->input_event_callback.call(k);
 }
 
 void DisplayServerWeb::virtual_keyboard_show(const String &p_existing_text, const Rect2 &p_screen_rect, VirtualKeyboardType p_type, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
@@ -1146,7 +1193,7 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, WindowMode 
 			WINDOW_EVENT_MOUSE_EXIT,
 			WINDOW_EVENT_FOCUS_IN,
 			WINDOW_EVENT_FOCUS_OUT);
-	godot_js_display_vk_cb(&DisplayServerWeb::vk_input_text_callback);
+	godot_js_display_vk_cb(&DisplayServerWeb::vk_input_text_callback, &DisplayServerWeb::vk_submit_text_callback);
 
 	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_event);
 }

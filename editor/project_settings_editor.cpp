@@ -610,17 +610,19 @@ void ProjectSettingsEditor::_update_action_map_editor() {
 		}
 
 		// Strip the "input/" from the left.
-		String display_name = property_name.substr(String("input/").size() - 1);
+		String name = property_name.substr(String("input/").size() - 1);
 		Dictionary action = GLOBAL_GET(property_name);
 
 		ActionMapEditor::ActionInfo action_info;
 		action_info.action = action;
 		action_info.editable = true;
-		action_info.name = display_name;
+		action_info.name = name;
+		action_info.display_name = name;
 
 		const bool is_builtin_input = ProjectSettings::get_singleton()->get_input_presets().find(property_name) != nullptr;
 		if (is_builtin_input) {
 			action_info.editable = false;
+			action_info.display_name = InputMap::get_singleton()->get_builtin_display_name(name);
 			action_info.icon = builtin_icon;
 			action_info.has_initial = true;
 			action_info.action_initial = ProjectSettings::get_singleton()->property_get_revert(property_name);

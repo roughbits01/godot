@@ -389,10 +389,11 @@ Array EditorSettingsDialog::_event_list_to_array_helper(const List<Ref<InputEven
 	return events;
 }
 
-TreeItem *EditorSettingsDialog::_create_shortcut_treeitem(TreeItem *p_parent, const String &p_shortcut_identifier, const String &p_display, Array &p_events, bool p_allow_revert, bool p_is_action, bool p_is_collapsed) {
+TreeItem *EditorSettingsDialog::_create_shortcut_treeitem(TreeItem *p_parent, const String &p_shortcut_identifier, const String &p_display, const String &p_tooltip_text, Array &p_events, bool p_allow_revert, bool p_is_action, bool p_is_collapsed) {
 	TreeItem *shortcut_item = shortcuts->create_item(p_parent);
 	shortcut_item->set_collapsed(p_is_collapsed);
 	shortcut_item->set_text(0, p_display);
+	shortcut_item->set_tooltip_text(0, p_tooltip_text);
 
 	Ref<InputEvent> primary = p_events.size() > 0 ? Ref<InputEvent>(p_events[0]) : Ref<InputEvent>();
 	Ref<InputEvent> secondary = p_events.size() > 1 ? Ref<InputEvent>(p_events[1]) : Ref<InputEvent>();
@@ -555,7 +556,8 @@ void EditorSettingsDialog::_update_shortcuts() {
 		bool same_as_defaults = Shortcut::is_event_array_equal(default_events, action_events);
 		bool collapse = !collapsed.has(action_name) || (collapsed.has(action_name) && collapsed[action_name]);
 
-		TreeItem *item = _create_shortcut_treeitem(common_section, action_name, action_name, action_events, !same_as_defaults, true, collapse);
+		const String action_display_name = InputMap::get_singleton()->get_builtin_display_name(action_name);
+		TreeItem *item = _create_shortcut_treeitem(common_section, action_name, action_name, action_display_name, action_events, !same_as_defaults, true, collapse);
 		item->set_auto_translate_mode(0, AUTO_TRANSLATE_MODE_DISABLED); // `ui_*` input action names are untranslatable identifiers.
 	}
 
@@ -616,7 +618,7 @@ void EditorSettingsDialog::_update_shortcuts() {
 		bool same_as_defaults = Shortcut::is_event_array_equal(original, shortcuts_array);
 		bool collapse = !collapsed.has(E) || (collapsed.has(E) && collapsed[E]);
 
-		_create_shortcut_treeitem(section, E, sc->get_name(), shortcuts_array, !same_as_defaults, false, collapse);
+		_create_shortcut_treeitem(section, E, sc->get_name(), sc->get_name(), shortcuts_array, !same_as_defaults, false, collapse);
 	}
 
 	// remove sections with no shortcuts

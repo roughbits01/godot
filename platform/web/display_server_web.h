@@ -122,14 +122,16 @@ private:
 	static int _mouse_button_callback(int p_pressed, int p_button, double p_x, double p_y, int p_modifiers);
 	WASM_EXPORT static void mouse_move_callback(double p_x, double p_y, double p_rel_x, double p_rel_y, int p_modifiers, double p_pressure);
 	static void _mouse_move_callback(double p_x, double p_y, double p_rel_x, double p_rel_y, int p_modifiers, double p_pressure);
-	WASM_EXPORT static int mouse_wheel_callback(double p_delta_x, double p_delta_y);
-	static int _mouse_wheel_callback(double p_delta_x, double p_delta_y);
+	WASM_EXPORT static int mouse_wheel_callback(double p_delta_x, double p_delta_y, int p_modifiers);
+	static int _mouse_wheel_callback(double p_delta_x, double p_delta_y, int p_modifiers);
 	WASM_EXPORT static void touch_callback(int p_type, int p_count);
 	static void _touch_callback(int p_type, int p_count);
 	WASM_EXPORT static void key_callback(int p_pressed, int p_repeat, int p_modifiers);
 	static void _key_callback(const String &p_key_event_code, const String &p_key_event_key, int p_pressed, int p_repeat, int p_modifiers);
 	WASM_EXPORT static void vk_input_text_callback(const char *p_text, int p_cursor);
 	static void _vk_input_text_callback(const String &p_text, int p_cursor);
+	WASM_EXPORT static void vk_submit_text_callback();
+	static void _vk_submit_text_callback();
 	WASM_EXPORT static void gamepad_callback(int p_index, int p_connected, const char *p_id, const char *p_guid);
 	static void _gamepad_callback(int p_index, int p_connected, const String &p_id, const String &p_guid);
 	WASM_EXPORT static void js_utterance_callback(int p_event, int p_id, int p_pos);

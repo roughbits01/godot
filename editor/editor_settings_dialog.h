@@ -90,7 +90,7 @@ class EditorSettingsDialog : public AcceptDialog {
 
 	void _event_config_confirmed();
 
-	TreeItem *_create_shortcut_treeitem(TreeItem *p_parent, const String &p_shortcut_identifier, const String &p_display, Array &p_events, bool p_allow_revert, bool p_is_common, bool p_is_collapsed);
+	TreeItem *_create_shortcut_treeitem(TreeItem *p_parent, const String &p_shortcut_identifier, const String &p_display, const String &p_tooltip_text, Array &p_events, bool p_allow_revert, bool p_is_common, bool p_is_collapsed);
 	Array _event_list_to_array_helper(const List<Ref<InputEvent>> &p_events);
 	void _update_builtin_action(const String &p_name, const Array &p_events);
 	void _update_shortcut_events(const String &p_path, const Array &p_events);

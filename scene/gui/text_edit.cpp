@@ -2545,7 +2545,6 @@ void TextEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 				drag_caret_index = carets.size() - 1;
 			}
 
-			drag_caret_force_displayed = true;
 			set_caret_line(pos.y, false, true, -1, drag_caret_index);
 			set_caret_column(pos.x, true, drag_caret_index);
 			dragging_selection = true;
@@ -3423,7 +3422,10 @@ void TextEdit::_update_ime_window_position() {
 		return;
 	}
 	DisplayServer::get_singleton()->window_set_ime_active(true, wid);
-	Point2 pos = get_global_position() + get_caret_draw_pos();
+	
+	// Transform position through the complete viewport chain (handles SubViewports properly)
+	Point2 pos = get_viewport_transform().xform(get_global_position() + get_caret_draw_pos());
+	
 	if (get_window()->get_embedder()) {
 		pos += get_viewport()->get_popup_base_transform().get_origin();
 	}
